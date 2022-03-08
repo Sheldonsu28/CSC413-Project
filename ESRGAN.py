@@ -15,35 +15,35 @@ class Generator(nn.Module):
         self.relu = nn.ReLU(inplace=True)
 
         self.conv0 = nn.Sequential(
-            nn.Conv2d(channels, 64, 9, stride=stride, padding=padding),
+            nn.Conv2d(channels, 64, (9, 9), stride=(stride, stride), padding=padding),
             self.relu
         )
 
         self.RRDB_layers = nn.Sequential(*([RRDB(64, 32, global_beta)] * 23))
         self.conv1 = nn.Sequential(
-            nn.Conv2d(channels, 64, kernel_size, stride=stride, padding=padding),
+            nn.Conv2d(channels, 64, (kernel_size, kernel_size), stride=(stride, stride), padding=padding),
             self.relu
         )
 
         self.upSample0 = nn.Sequential(
-            nn.Conv2d(64, 256, kernel_size, stride=stride, padding=padding),
+            nn.Conv2d(64, 256, (kernel_size, kernel_size), stride=(stride, stride), padding=padding),
             nn.PixelShuffle(2),
             self.relu
         )
 
         self.upSample1 = nn.Sequential(
-            nn.Conv2d(64, 256, kernel_size, stride=stride, padding=padding),
+            nn.Conv2d(64, 256, (kernel_size, kernel_size), stride=(stride, stride), padding=padding),
             nn.PixelShuffle(2),
             self.relu
         )
 
         self.conv2 = nn.Sequential(
-            nn.Conv2d(64, 64, kernel_size, stride=stride, padding=padding),
+            nn.Conv2d(64, 64, (kernel_size, kernel_size), stride=(stride, stride), padding=padding),
             self.relu
         )
 
         self.conv3 = nn.Sequential(
-            nn.Conv2d(64, channels, kernel_size, stride=stride, padding=padding),
+            nn.Conv2d(64, channels, (kernel_size, kernel_size), stride=(stride, stride), padding=padding),
             self.relu
         )
 
@@ -63,7 +63,7 @@ class Discriminator(nn.Module):
         super().__init__()
 
         self.block1 = nn.Sequential(
-            nn.Conv2d(3, 64, kernel_size=kernel_size, stride=stride, padding=padding, bias=True),
+            nn.Conv2d(3, 64, kernel_size=(kernel_size, kernel_size), stride=(stride, stride), padding=padding, bias=True),
             nn.LeakyReLU(0.2, inplace=True)
         )
 
@@ -89,7 +89,8 @@ class DiscriminatorBlock(nn.Module):
         super().__init__()
 
         self.block1 = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding, bias=False),
+            nn.Conv2d(in_channels, out_channels, kernel_size=(kernel_size, kernel_size),
+                      stride=(stride, stride), padding=padding, bias=False),
             nn.BatchNorm2d(out_channels),
             nn.LeakyReLU(0.2, inplace=True)
         )
@@ -130,11 +131,16 @@ class DenseBlock(nn.Module):
     def __init__(self, channels, growth_rate, kernel_size=3, stride=1, padding=1):
         super().__init__()
 
-        self.conv0 = nn.Conv2d(channels, growth_rate, kernel_size, stride, padding)
-        self.conv1 = nn.Conv2d(channels + growth_rate, growth_rate, kernel_size, stride, padding)
-        self.conv2 = nn.Conv2d(channels + 2 * growth_rate, growth_rate, kernel_size, stride, padding)
-        self.conv3 = nn.Conv2d(channels + 3 * growth_rate, growth_rate, kernel_size, stride, padding)
-        self.conv4 = nn.Conv2d(channels + 3 * growth_rate, channels, kernel_size, stride, padding)
+        self.conv0 = nn.Conv2d(channels, growth_rate, (kernel_size, kernel_size),
+                               (stride, stride), padding)
+        self.conv1 = nn.Conv2d(channels + growth_rate, growth_rate, (kernel_size, kernel_size),
+                               (stride, stride), padding)
+        self.conv2 = nn.Conv2d(channels + 2 * growth_rate, growth_rate, (kernel_size, kernel_size),
+                               (stride, stride), padding)
+        self.conv3 = nn.Conv2d(channels + 3 * growth_rate, growth_rate, (kernel_size, kernel_size),
+                               (stride, stride), padding)
+        self.conv4 = nn.Conv2d(channels + 3 * growth_rate, channels, (kernel_size, kernel_size),
+                               (stride, stride), padding)
 
         self.LReLu = nn.LeakyReLU(0.2, inplace=True)
 
