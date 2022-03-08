@@ -59,8 +59,43 @@ class Generator(nn.Module):
 
 
 class Discriminator(nn.Module):
-    def __init__(self):
+    def __init__(self, kernel_size=3, stride=1, padding=1):
         super().__init__()
+
+        self.block1 = nn.Sequential(
+            nn.Conv2d(3, 64, kernel_size=kernel_size, stride=stride, padding=padding, bias=True),
+            nn.LeakyReLU(0.2, inplace=True)
+        )
+
+        self.basicBlocks = nn.Sequential(
+            DiscriminatorBlock(64, 64, kernel_size=kernel_size, stride=2, padding=padding),
+            DiscriminatorBlock(64, 128, kernel_size=kernel_size, stride=stride, padding=padding),
+            DiscriminatorBlock(128, 128, kernel_size=kernel_size, stride=2, padding=padding),
+            DiscriminatorBlock(128, 256, kernel_size=kernel_size, stride=stride, padding=padding),
+            DiscriminatorBlock(256, 256, kernel_size=kernel_size, stride=2, padding=padding),
+            DiscriminatorBlock(256, 512, kernel_size=kernel_size, stride=stride, padding=padding),
+            DiscriminatorBlock(512, 512, kernel_size=kernel_size, stride=2, padding=padding)
+        )
+
+        self.block2 = nn.Sequential(
+            nn.Linear(512 * 4 * 4, 100),
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Linear(100, 1)
+        )
+
+
+class DiscriminatorBlock(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1):
+        super().__init__()
+
+        self.block1 = nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding, bias=False),
+            nn.BatchNorm2d(out_channels),
+            nn.LeakyReLU(0.2, inplace=True)
+        )
+
+    def forward(self, x):
+        return self.block1(x)
 
 
 class RRDB(nn.Module):

@@ -30,6 +30,5 @@ def calc_size(H, kernel_size, padding=0, dilation=1, stride=1):
 
 if __name__ == "__main__":
     a = 1080
-    for i in range(23):
-        a = calc_size(a, 9)
+    a = calc_size(a, 3, stride=1)
     print(a)
