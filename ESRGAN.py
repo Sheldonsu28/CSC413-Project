@@ -12,39 +12,37 @@ class Generator(nn.Module):
     def __init__(self, channels, kernel_size=3, stride=1, padding=1):
         super().__init__()
 
-        self.relu = nn.ReLU(inplace=True)
-
         self.conv0 = nn.Sequential(
             nn.Conv2d(channels, 64, (9, 9), stride=(stride, stride), padding=padding),
-            self.relu
+            nn.ReLU(inplace=True)
         )
 
         self.RRDB_layers = nn.Sequential(*([RRDB(64, 32, global_beta)] * 23))
         self.conv1 = nn.Sequential(
             nn.Conv2d(channels, 64, (kernel_size, kernel_size), stride=(stride, stride), padding=padding),
-            self.relu
+            nn.ReLU(inplace=True)
         )
 
         self.upSample0 = nn.Sequential(
             nn.Conv2d(64, 256, (kernel_size, kernel_size), stride=(stride, stride), padding=padding),
             nn.PixelShuffle(2),
-            self.relu
+            nn.ReLU(inplace=True)
         )
 
         self.upSample1 = nn.Sequential(
             nn.Conv2d(64, 256, (kernel_size, kernel_size), stride=(stride, stride), padding=padding),
             nn.PixelShuffle(2),
-            self.relu
+            nn.ReLU(inplace=True)
         )
 
         self.conv2 = nn.Sequential(
             nn.Conv2d(64, 64, (kernel_size, kernel_size), stride=(stride, stride), padding=padding),
-            self.relu
+            nn.ReLU(inplace=True)
         )
 
         self.conv3 = nn.Sequential(
             nn.Conv2d(64, channels, (kernel_size, kernel_size), stride=(stride, stride), padding=padding),
-            self.relu
+            nn.ReLU(inplace=True)
         )
 
     def forward(self, x):
