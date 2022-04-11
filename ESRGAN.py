@@ -1,5 +1,7 @@
 from torch import cat
 from torch import nn
+from torch import flatten
+from torch import add
 
 """
 Reference:
@@ -13,24 +15,19 @@ class Generator(nn.Module):
         super().__init__()
 
         self.conv0 = nn.Sequential(
-            nn.Conv2d(channels, 64, (9, 9), stride=(stride, stride), padding=padding),
-            nn.ReLU(inplace=True)
+            nn.Conv2d(channels, 64, (3, 3), stride=(stride, stride), padding=padding),
+            nn.ReLU()
         )
 
-        self.RRDB_layers = nn.Sequential(*([RRDB(64, 32, global_beta)] * 23))
+        self.RRDB_layers = nn.Sequential(*[RRDB(64, 32, global_beta) for i in range(16)])
+
         self.conv1 = nn.Sequential(
-            nn.Conv2d(channels, 64, (kernel_size, kernel_size), stride=(stride, stride), padding=padding),
+            nn.Conv2d(64, 64, (kernel_size, kernel_size), stride=(stride, stride), padding=padding),
             nn.ReLU(inplace=True)
         )
 
         self.upSample0 = nn.Sequential(
-            nn.Conv2d(64, 256, (kernel_size, kernel_size), stride=(stride, stride), padding=padding),
-            nn.PixelShuffle(2),
-            nn.ReLU(inplace=True)
-        )
-
-        self.upSample1 = nn.Sequential(
-            nn.Conv2d(64, 256, (kernel_size, kernel_size), stride=(stride, stride), padding=padding),
+            nn.Conv2d(64, 64 * 4, (1, 1), stride=(stride, stride)),
             nn.PixelShuffle(2),
             nn.ReLU(inplace=True)
         )
@@ -48,31 +45,32 @@ class Generator(nn.Module):
     def forward(self, x):
         x1 = self.conv0(x)
         x2 = self.RRDB_layers(x1)
-        x3 = self.conv1(x2) + x1
+        x3 = add(self.conv1(x2), x1)
         x4 = self.upSample0(x3)
-        x5 = self.upSample1(x4)
-        x6 = self.conv2(x5)
-
-        return self.conv3(x6)
+        x5 = self.conv2(x4)
+        return self.conv3(x5)
 
 
 class Discriminator(nn.Module):
-    def __init__(self, kernel_size=3, stride=1, padding=1):
+    def __init__(self, channels, kernel_size=3, stride=1, padding=1):
         super().__init__()
 
         self.block1 = nn.Sequential(
-            nn.Conv2d(3, 64, kernel_size=(kernel_size, kernel_size), stride=(stride, stride), padding=padding, bias=True),
+            nn.Conv2d(channels, 64, kernel_size=(kernel_size, kernel_size), stride=(stride, stride), padding=padding,
+                      bias=True),
             nn.LeakyReLU(0.2, inplace=True)
         )
 
         self.basicBlocks = nn.Sequential(
-            DiscriminatorBlock(64, 64, kernel_size=kernel_size, stride=2, padding=padding),
-            DiscriminatorBlock(64, 128, kernel_size=kernel_size, stride=stride, padding=padding),
-            DiscriminatorBlock(128, 128, kernel_size=kernel_size, stride=2, padding=padding),
-            DiscriminatorBlock(128, 256, kernel_size=kernel_size, stride=stride, padding=padding),
-            DiscriminatorBlock(256, 256, kernel_size=kernel_size, stride=2, padding=padding),
-            DiscriminatorBlock(256, 512, kernel_size=kernel_size, stride=stride, padding=padding),
-            DiscriminatorBlock(512, 512, kernel_size=kernel_size, stride=2, padding=padding)
+            DiscriminatorBlock(64, 64, kernel_size=4, stride=2, padding=padding),
+            DiscriminatorBlock(64, 128, kernel_size=3, stride=stride, padding=padding),
+            DiscriminatorBlock(128, 128, kernel_size=4, stride=2, padding=padding),
+            DiscriminatorBlock(128, 256, kernel_size=3, stride=stride, padding=padding),
+            DiscriminatorBlock(256, 256, kernel_size=4, stride=2, padding=padding),
+            DiscriminatorBlock(256, 512, kernel_size=3, stride=stride, padding=padding),
+            DiscriminatorBlock(512, 512, kernel_size=4, stride=2, padding=padding),
+            DiscriminatorBlock(512, 512, kernel_size=3, stride=stride, padding=padding),
+            DiscriminatorBlock(512, 512, kernel_size=4, stride=2, padding=padding),
         )
 
         self.block2 = nn.Sequential(
@@ -80,6 +78,12 @@ class Discriminator(nn.Module):
             nn.LeakyReLU(0.2, inplace=True),
             nn.Linear(100, 1)
         )
+
+    def forward(self, x):
+        layer1 = self.block1(x)
+        block_out = self.basicBlocks(layer1)
+        flattened = flatten(block_out, 1)
+        return self.block2(flattened)
 
 
 class DiscriminatorBlock(nn.Module):
@@ -107,17 +111,14 @@ class RRDB(nn.Module):
         self.beta = beta
 
     def forward(self, x):
-        accumulator = x
-
         x1 = self.block0(x)
-        accumulator += self.beta * x1
+        skip0 = self.beta * x1 + x
 
-        x2 = self.block1(accumulator)
-        accumulator += self.beta * x2
+        x2 = self.block1(skip0)
+        skip1 = self.beta * x2 + skip0
 
-        x3 = self.block2(accumulator)
-
-        return (accumulator + self.beta * x3) * self.beta + x
+        x3 = self.block2(skip1)
+        return (skip1 + self.beta * x3) * self.beta + x
 
 
 class DenseBlock(nn.Module):
