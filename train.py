@@ -23,7 +23,7 @@ class CustomData(Dataset):
                                 encoding="utf-8")
         self.hrs = [read_image(os.path.join('hr', name)) for name in self.names]
 
-        self.lr_transform = transforms.Compose([transforms.Resize((64, 64)), transforms.Resize((128, 128))])
+        self.lr_transform = transforms.Compose([transforms.Resize((64, 64))])
 
         self.lrs = [self.lr_transform(img) for img in self.hrs]
 
@@ -43,7 +43,7 @@ def train_SRCNN(args):
 
     model = SRCNN(args['out_channels'])
     if torch.cuda.is_available():
-        model.cuda(device)
+        model = model.cuda(device)
 
     model.train()
     params = model.parameters()
@@ -78,8 +78,7 @@ def train_SRCNN(args):
     model.eval()
     with torch.no_grad():
         img = read_image('1.png')
-        tensor = torch.tensor(img)
-        out = model(to_var(tensor[None, :, :, :], device))
+        out = model(to_var(img[None, :, :, :], device))
         out = out.squeeze(0).cpu().detach()
         save_image(out, "SRCNN_out.png")
 
@@ -183,9 +182,9 @@ def train_ESRGAN(args):
 
 if __name__ == "__main__":
     args = {'out_channels': 3,
-            'batch_size': 100,
-            'learning_rate': 10e-4,
-            'epochs': 5000,
+            'batch_size': 1,
+            'learning_rate': 0.0003,
+            'epochs': 720,
             'betas': [0.9, 0.999],
             'gradient_penalty': True  # This field is not used in SRCNN training
             }
