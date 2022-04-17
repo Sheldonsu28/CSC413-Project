@@ -22,7 +22,7 @@ class SRCNN(nn.Module):
         )
 
     def forward(self, x):
-        # x = self.activation(self.upSample0(x))
+        x = self.activation(self.upSample0(x))
         x1 = self.activation(self.block1(x))
         x2 = self.activation(self.block2(x1))
         return self.block3(x2)
