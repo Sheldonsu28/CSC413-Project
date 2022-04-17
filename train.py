@@ -19,7 +19,7 @@ random.seed(42)
 
 class CustomData(Dataset):
     def __init__(self):
-        self.names = np.loadtxt('DIV2K_train_HR/DIV2K_train_HR.csv', dtype='str', delimiter=", ",
+        self.names = np.loadtxt('hr/hr.csv', dtype='str', delimiter=", ",
                                 encoding="utf-8")
         self.hrs = [read_image(os.path.join('hr', name)) for name in self.names]
 
