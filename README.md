@@ -1,0 +1,3 @@
+# Analysis SRCNN \& ESRGAN for Image Super Resolution
+
+In this project, we are interested in the application of deep neural network in image super resolution. We re-implement one discriminative method (SRCNN) and one generative method (ESRGAN). We perform in-depth analysis on various dataset both quantitatively and qualitatively. Moreover, We will apply these two existing algorithms to several new image data sets and analyze their results.
